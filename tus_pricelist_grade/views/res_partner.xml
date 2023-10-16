@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="ir.ui.view" id="pricelist_grade_res_partner_form_view">
+        <field name="name">pricelist_grade.res.partner.form.view</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="grade_id" groups="product.group_product_pricelist"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="pricelist_grade_view_partner_property_form">
+        <field name="name">pricelist_grade.res.partner.product.property.form.view</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="product.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <field name="property_product_pricelist" position="attributes">
+                <attribute name="domain">['|',('grade_id', '=', grade_id), ('grade_id', '=', False)]</attribute>
+            </field>
+        </field>
+    </record>
+
+</odoo>

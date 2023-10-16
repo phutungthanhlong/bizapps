@@ -1,0 +1,57 @@
+<odoo>
+
+    <record id="grade_product_pricelist_tree_view" model="ir.ui.view">
+        <field name="name">pricelist_grade.pricelist.grade.tree.view</field>
+        <field name="model">grade.product.pricelist</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="grade_product_pricelist_form_view">
+        <field name="name">pricelist_grade.pricelist.grade.form.view</field>
+        <field name="model">grade.product.pricelist</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <h1>
+                                <field name="name" required="1"/>
+                            </h1>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Customer" name="working_hours">
+                            <field name="partner_ids" readonly="1">
+                                <tree>
+                                    <field name="display_name"/>
+                                    <field name="phone"/>
+                                    <field name="email"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Pricelists" name="global_leaves">
+                            <field name="pricelist_ids" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="pricelist_grade_product_pricelist_action" model="ir.actions.act_window">
+        <field name="name">Grade</field>
+        <field name="res_model">grade.product.pricelist</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="main_menu_pricelist_grade"
+              parent="sale.menu_sale_config"
+              action="pricelist_grade_product_pricelist_action"
+              groups="product.group_product_pricelist"
+              sequence="13"
+              name="Grade"/>
+</odoo>
