@@ -13,3 +13,4 @@ class ResPartnerExt(models.Model):
         remove the price list value each time the Grade is selected
         """
         self.property_product_pricelist = False
+        self.property_product_pricelist = True
