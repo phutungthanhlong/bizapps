@@ -8,7 +8,9 @@
                     <div class="col">
                         <t t-if="env.pos.config.allow_image_on_orderline">
                             <span class="orderline-product-img">
-                                <img t-attf-src="/web/image?model=product.product&amp;field=image_128&amp;id={{ props.line.get_product().id }}&amp;unique=1" style="padding: 5px; height: 55px;"/>
+                                <div style="width: 55px; height: 55px; overflow: hidden; position: relative;">
+  <img src="/web/image?model=product.product&amp;field=image_128&amp;id=218574&amp;unique=1" alt="Hình ảnh" style="width: 100%; height: 100%; object-fit: cover; object-position: center center;">
+</div>
                             </span>
                         </t>
                     </div>
