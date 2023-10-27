@@ -7,8 +7,8 @@
                 <div class="row" style="display:flex;">
                     <div class="col">
                         <t t-if="env.pos.config.allow_image_on_orderline">
-                            <span class="orderline-product-img">
-                                <img t-attf-src="/web/image?model=product.product&amp;field=image_128&amp;id={{ props.line.get_product().id }}&amp;unique=1" style="padding: 5px; max-width: 55px; max-height: 55px; width: auto; height: auto; display: block; margin: 0 auto;"/>
+                            <span class="orderline-product-img" style="width: 55px; height: 55px; overflow: hidden;">
+                                <img t-attf-src="/web/image?model=product.product&amp;field=image_128&amp;id={{ props.line.get_product().id }}&amp;unique=1" style="width: auto; height: 100%; display: block; margin: 0 auto;"/>
                             </span>
                         </t>
                     </div>
