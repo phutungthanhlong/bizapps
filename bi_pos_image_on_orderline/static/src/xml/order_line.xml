@@ -39,6 +39,7 @@
                         <span class="price" style="position: absolute;right: 10px;">
                             <t t-esc="env.pos.format_currency(props.line.get_display_price())"/>
                         </span>
+			</div>
                         <ul class="info-list">
                             <t t-if="props.line.get_quantity_str() !== '1' || props.line.selected ">
                                 <li class="info">
@@ -86,7 +87,7 @@
                                 </t>
                             </ul>
                         </t>
-                    </div></div>
+                    </div>
                 </div>
             </li>
         </xpath>
