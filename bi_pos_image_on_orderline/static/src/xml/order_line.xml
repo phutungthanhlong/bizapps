@@ -36,7 +36,7 @@
                                 </t>
                             </t>
                         </span>
-                        <span class="price" style="position: relative;right: 10px;">
+                        <span class="price" style="position: static; right: 10px;">
                             <t t-esc="env.pos.format_currency(props.line.get_display_price())"/>
                         </span>
 </div>
