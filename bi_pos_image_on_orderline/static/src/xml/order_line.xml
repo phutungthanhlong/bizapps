@@ -12,8 +12,9 @@
                             </span>
                         </t>
                     </div>
-                    <div class="col" style="margin-left: 5px; border-left: 1px solid #ccc; padding-left: 5px;">
-                        <span class="product-name">
+                    <div class="col" style="width: calc(100% - 55px); margin-left: 5px; border-left: 1px solid #ccc; padding-left: 5px;">
+                        <div class="orderline-container" style="position: relative;">
+			<span class="product-name">
                             <t t-esc="props.line.get_full_product_name()"/>
                             <span> </span>
                             <t t-if="props.line.get_product().tracking!=='none' &amp;&amp; (env.pos.picking_type.use_create_lots || env.pos.picking_type.use_existing_lots)">
@@ -85,7 +86,7 @@
                                 </t>
                             </ul>
                         </t>
-                    </div>
+                    </div></div>
                 </div>
             </li>
         </xpath>
