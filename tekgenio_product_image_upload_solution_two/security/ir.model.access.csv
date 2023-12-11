@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tekgenio_folder_update_log,tekgenio.folder.update.log,model_folder_update_log,base.group_user,1,1,1,1
 access_tekgenio_product_image_upload_log,tekgenio.product.image.upload.log,model_product_image_upload_log,base.group_user,1,1,1,1
 access_tekgenio_product_image_upload_log_line,tekgenio.product.image.upload.log.line,model_product_image_upload_log_line,base.group_user,1,1,1,1
+access_tekgenio_image_upload_allowed_extension,tg.image.upload.allowed.extension,model_tg_image_upload_allowed_extension,base.group_user,1,1,1,1
+access_tekgenio_clean_extra_images_wizard,tg.clean.extra.images.wizard,model_clean_extra_images_wizard,base.group_user,1,1,1,1

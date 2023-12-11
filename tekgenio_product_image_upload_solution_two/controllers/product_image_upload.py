@@ -146,6 +146,10 @@ class ProductImageUpload(http.Controller):
                 existing_folder_log.sudo().write(
                     {'modified_date': file_latest_time_stamp, 'root_modified_date': datetime.datetime.now(),
                      })
+            # if existing_folder_log:
+            #     existing_folder_log.sudo().write(
+            #             {'modified_date': file_latest_time_stamp, 'root_modified_date': datetime.datetime.now(),
+            #              })
 
             res = self.create_log_files(root_path, prod_barcode, flag_val)
             if res:
@@ -201,6 +205,16 @@ class ProductImageUpload(http.Controller):
         dir_mod_time = kwargs.get('dir_modified_time')
         dir_conv_time = datetime.datetime.strptime(dir_mod_time, '%Y-%m-%d %H:%M:%S.%f')
         # dir_accesed_conv_time = datetime.datetime.strptime(dir_accessed_time, '%Y-%m-%d %H:%M:%S.%f')
+        allowed_image_extension = []
+        allowed_extension_ids = request.env['ir.config_parameter'].sudo().get_param('tekgenio_product_image_upload_solution_two.allowed_image_extension_ids')
+        if allowed_extension_ids:
+            allowed_extension_records = request.env['tg.image.upload.allowed.extension'].sudo().search([])
+            print(allowed_extension_records)
+            stripped_extension_val = allowed_extension_ids.strip('][').split(', ')
+            for rec in allowed_extension_records:
+                if str(rec.id) in stripped_extension_val:
+                    extension_name = rec.name.lower()
+                    allowed_image_extension.append(extension_name)
 
         try:
             existing_folder_log = request.env['folder.update.log'].sudo().search([('folder_path', '=', path)],
@@ -214,7 +228,7 @@ class ProductImageUpload(http.Controller):
                 if dir_conv_time > existing_folder_log_size or self.check_timestamp_for_images(path,
                                                                                                existing_folder_log_size):
                     response_data = {'dir': name, 'timestamp': dir_mod_time,
-                                     'existing_time_stamp': existing_folder_mod_date_str}
+                                     'existing_time_stamp': existing_folder_mod_date_str, 'image_extension': allowed_image_extension}
                     return Response(json.dumps({'success': True, 'msg': 'Folder updated', 'vals': response_data}),
                                     content_type='application/json',
                                     status=200)
@@ -223,7 +237,7 @@ class ProductImageUpload(http.Controller):
                                     content_type='application/json',
                                     status=400)
             else:
-                response_data = {'dir': name, 'timestamp': dir_mod_time}
+                response_data = {'dir': name, 'timestamp': dir_mod_time,'image_extension': allowed_image_extension}
                 return Response(json.dumps({'success': True, 'msg': 'Folder not existing', 'vals': response_data}),
                                 content_type='application/json',
                                 status=200)
@@ -255,7 +269,6 @@ class ProductImageUpload(http.Controller):
         return file_path_modified_utc
 
     def upload_products_in_odoo(self, *args):
-        print("hello")
         base64 = args[0]
         barcode = args[1]
         file_name = args[2]
@@ -300,7 +313,17 @@ class ProductImageUpload(http.Controller):
         #                 content_type='application/json',
         #                 status=200)
 
-
+    def delete_odoo_images(self,current_images_list,product_ref):
+        current_images_list = json.loads(current_images_list)
+        product_tmpl = request.env['product.template'].sudo().search([('barcode', '=', product_ref)])
+        if product_tmpl:
+            if product_tmpl.product_template_image_ids:
+                server_image_list = [rec.name for rec in product_tmpl.product_template_image_ids]
+                extra_server_images = set(server_image_list) - set(current_images_list)
+                if extra_server_images:
+                    extra_server_image_records = product_tmpl.product_template_image_ids.filtered(
+                        lambda rec: rec.name in extra_server_images)
+                    extra_server_image_records.unlink()
 
     @http.route('/upload/root/product/images', type='http', csrf=False, auth="public",
                 methods=['GET', 'POST', 'OPTIONS'], cors="*")
@@ -314,9 +337,8 @@ class ProductImageUpload(http.Controller):
         product_ref = kwargs.get('barcode')
         img_name = kwargs.get('image_name')
         flag_val = kwargs.get('flag')
-        barcode_existing = []
-        # if int(flag_val) == 0:
-        #     count = 0
+        current_images_list = kwargs.get('current_images')
+
         dir_formatted_datetime = datetime.datetime.strptime(dir_current_time, '%Y-%m-%d %H:%M:%S.%f')
         file_latest_time_stamp = self.get_the_file_latest_timestamp(dir_path)
 
@@ -325,8 +347,11 @@ class ProductImageUpload(http.Controller):
                 file_latest_time_stamp = dir_formatted_datetime
         else:
             file_latest_time_stamp = dir_formatted_datetime
+        if current_images_list:
+            self.delete_odoo_images(current_images_list,product_ref)
 
         log_data = self.create_log_files(root_path, product_ref, flag_val)
+
         try:
             if log_data:
                 existing_folder_log = request.env['folder.update.log'].sudo().search([('folder_path', '=', dir_path)],
@@ -345,27 +370,44 @@ class ProductImageUpload(http.Controller):
                                 'barcode': product_ref,
                                 'log_status': 'Done',
                                 'log_type': 'Success',
+                                'log_message': '',
                             })
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                         else:
-                            [line_id.sudo().write({'log_status': 'Done'}) for line_id in product_upload_line_ids]
-
+                            [line_id.sudo().write({'log_status': 'Done','log_type': 'Success','log_message': '',}) for line_id in product_upload_line_ids]
                     elif res.status_code == 500:
-                        product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
-                                                   rec.barcode == product_ref]
-                        if not product_upload_line_ids:
-                            log_line = request.env['product.image.upload.log.line'].sudo().create({
-                                'barcode': product_ref,
-                                'log_status': 'Failed',
-                                'log_type': 'Danger',
-                                'log_message': 'Some file couldn\'t be decoded as image file',
-                            })
-                            log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                        if res.json.get('msg') == 'This file could not be decoded as an image file.':
+                            product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
+                                                       rec.barcode == product_ref]
+                            if not product_upload_line_ids:
+                                log_line = request.env['product.image.upload.log.line'].sudo().create({
+                                    'barcode': product_ref,
+                                    'log_status': 'Done',
+                                    'log_type': 'Success',
+                                    'log_message': '',
+                                })
+                                log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                            else:
+                                [line_id.sudo().write({'log_status': 'Done', 'log_type': 'Success',
+                                                       'log_message': ''}) for line_id
+                                 in product_upload_line_ids]
                         else:
-                            [line_id.sudo().write({'log_status': 'Failed', 'log_type': 'Danger',
-                                                   'log_message': 'Some file couldn\'t be decoded as image file'}) for line_id
-                             in product_upload_line_ids]
-                    else:
+                            product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
+                                                       rec.barcode == product_ref]
+                            if not product_upload_line_ids:
+                                log_line = request.env['product.image.upload.log.line'].sudo().create({
+                                    'barcode': product_ref,
+                                    'log_status': 'Failed',
+                                    'log_type': 'Danger',
+                                    'log_message': res.json.get('msg'),
+                                })
+                                log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                            else:
+                                [line_id.sudo().write({'log_status': 'Failed', 'log_type': 'Danger',
+                                                       'log_message': res.json.get('msg')})
+                                 for line_id
+                                 in product_upload_line_ids]
+                    elif res.status_code == 400:
                         product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
                                                    rec.barcode == product_ref]
                         if not product_upload_line_ids:
@@ -380,14 +422,8 @@ class ProductImageUpload(http.Controller):
                             [line_id.sudo().write({'log_status': 'Failed', 'log_type': 'Danger',
                                                    'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found'}) for line_id
                              in product_upload_line_ids]
-                            # product_upload_line_ids[0].sudo().write(
-                            #     {'log_status': 'Failed', 'log_message': 'Product Doesn\'t Uploaded successfully'})
-                        # log_line = request.env['product.image.upload.log.line'].sudo().search(
-                        #     [('barcode', '=', product_ref)],
-                        #     limit=1)
 
-                        # log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
-                    return Response(json.dumps({'success': True, 'msg': 'Image Uploaded Successufully'}),
+                    return Response(json.dumps({'success': True, 'msg': 'Image Uploaded Successfully'}),
                                     content_type='application/json',
                                     status=200)
                 else:
@@ -404,41 +440,59 @@ class ProductImageUpload(http.Controller):
                                 'barcode': product_ref,
                                 'log_status': 'Done',
                                 'log_type': 'Success',
+                                'log_message': '',
                             })
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                         else:
-                            log_line.sudo().write({'log_status': 'Done'})
+                            log_line.sudo().write({'log_status': 'Done','log_type': 'Success','log_message': '',})
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                     elif res.status_code == 500:
-                        product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
-                                                   rec.barcode == product_ref]
-                        if not product_upload_line_ids:
+                        if res.json.get('msg') == 'This file could not be decoded as an image file.':
+                            product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
+                                                       rec.barcode == product_ref]
+                            if not product_upload_line_ids:
+                                log_line = request.env['product.image.upload.log.line'].sudo().create({
+                                    'barcode': product_ref,
+                                    'log_status': 'Done',
+                                    'log_type': 'Success',
+                                    'log_message': '',
+                                })
+                                log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                            else:
+                                [line_id.sudo().write({'log_status': 'Done', 'log_type': 'Success',
+                                                       'log_message': ''}) for line_id
+                                 in product_upload_line_ids]
+                        else:
+                            product_upload_line_ids = [rec for rec in log_data.product_image_upload_line_ids if
+                                                       rec.barcode == product_ref]
+                            if not product_upload_line_ids:
+                                log_line = request.env['product.image.upload.log.line'].sudo().create({
+                                    'barcode': product_ref,
+                                    'log_status': 'Failed',
+                                    'log_type': 'Danger',
+                                    'log_message': res.json.get('msg'),
+                                })
+                                log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                            else:
+                                [line_id.sudo().write({'log_status': 'Failed', 'log_type': 'Danger',
+                                                       'log_message': res.json.get('msg')})
+                                 for line_id
+                                 in product_upload_line_ids]
+                    elif res.status_code == 400:
+                        log_line = request.env['product.image.upload.log.line'].sudo().search(
+                            [('barcode', '=', product_ref)],
+                            limit=1)
+                        if not log_line:
                             log_line = request.env['product.image.upload.log.line'].sudo().create({
                                 'barcode': product_ref,
                                 'log_status': 'Failed',
                                 'log_type': 'Danger',
-                                'log_message': 'Some file couldn\'t be decoded as image file',
+                                'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found',
                             })
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                         else:
-                            [line_id.sudo().write({'log_status': 'Failed', 'log_type': 'Danger',
-                                                   'log_message': 'Some file couldn\'t be decoded as image file'}) for line_id
-                             in product_upload_line_ids]
-                    # elif res.status_code == 400:
-                    #     log_line = request.env['product.image.upload.log.line'].sudo().search(
-                    #         [('barcode', '=', product_ref)],
-                    #         limit=1)
-                    #     if not log_line:
-                    #         log_line = request.env['product.image.upload.log.line'].sudo().create({
-                    #             'barcode': product_ref,
-                    #             'log_status': 'Failed',
-                    #             'log_type': 'Danger',
-                    #             'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found',
-                    #         })
-                    #         log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
-                    #     else:
-                    #         log_line.sudo().write({'log_status': 'Failed', 'log_type': 'Danger', 'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found'})
-                    #         log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
+                            log_line.sudo().write({'log_status': 'Failed', 'log_type': 'Danger', 'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found'})
+                            log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                     else:
                         log_line = request.env['product.image.upload.log.line'].sudo().search(
                             [('barcode', '=', product_ref)],
@@ -448,7 +502,7 @@ class ProductImageUpload(http.Controller):
                                 'barcode': product_ref,
                                 'log_status': 'Failed',
                                 'log_type': 'Danger',
-                                'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found'
+                                'log_message': res.json.get('msg'),
                             })
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                             return Response(json.dumps({'success': False, 'msg': 'Product Doesnot Found'}),
@@ -457,13 +511,13 @@ class ProductImageUpload(http.Controller):
 
                         else:
                             log_line.sudo().write(
-                                {'log_status': 'Failed', 'log_type': 'Danger', 'log_message': 'Product with barcode ' + product_ref + ' Doesn\'t Found'})
+                                {'log_status': 'Failed', 'log_type': 'Danger', 'log_message': res.json.get('msg')})
                             log_data.sudo().write({'product_image_upload_line_ids': [(4, log_line.id)]})
                             return Response(json.dumps({'success': False, 'msg': 'Product Doesnot Found'}),
                                             content_type='application/json',
                                             status=400)
 
-                    return Response(json.dumps({'success': True, 'msg': 'Image Uploaded Successufully'}),
+                    return Response(json.dumps({'success': True, 'msg': 'Image Uploaded Successfully'}),
                                     content_type='application/json',
                                     status=200)
             else:
@@ -474,13 +528,13 @@ class ProductImageUpload(http.Controller):
                     request.env['folder.update.log'].sudo().create(
                         {'root_path': root_path, 'folder_path': dir_path, 'modified_date': file_latest_time_stamp,
                          'root_modified_date': datetime.datetime.now()})
-                    return Response(json.dumps({'success': False, 'msg': 'Product Doesnot Found'}),
+                    return Response(json.dumps({'success': False, 'msg': 'Product Doesn\'t Found'}),
                                     content_type='application/json',
                                     status=400)
                 else:
                     existing_folder_log.sudo().write(
                         {'modified_date': file_latest_time_stamp, 'root_modified_date': datetime.datetime.now()})
-                    return Response(json.dumps({'success': False, 'msg': 'Product Doesnot Found'}),
+                    return Response(json.dumps({'success': False, 'msg': 'Product Doesn\'t Found'}),
                                     content_type='application/json',
                                     status=400)
         except Exception as e:

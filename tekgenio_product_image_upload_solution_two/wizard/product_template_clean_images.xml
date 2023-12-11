@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="product_template_extra_clean_images_wizard" model="ir.ui.view">
+        <field name="name">product.template.extra,clean.images.wizard</field>
+        <field name="model">clean.extra.images.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Clean Extra Images">
+                <sheet>
+                    <div style="display:flex;">
+                        <group class="col-md-12" >
+                            <field name="name"/>
+                            <br/>
+                            <label for="name" string="Hint:Please, enter comma separated values to be deleted.(eg: a.png,b.jpeg)" class="oe_inline"/>
+                            <field name="product_tmpl_ids" invisible="1"/>
+                        </group>
+                    </div>
+                </sheet>
+                <footer>
+                    <button special="cancel" string="Cancel" class="btn-secondary"/>
+                    <button name="delete_the_extra_images" type="object" string="Delete" class="btn btn-primary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+
+    <record model="ir.actions.act_window" id="product_template_extra_clean_images_wizard_action">
+        <field name="name">Clean Extra Images Wizard</field>
+        <field name="res_model">clean.extra.images.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
