@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="folder_log_update_view_tree" model="ir.ui.view">
+        <field name="name">folder.log.update.view.tree</field>
+        <field name="model">folder.update.log</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="root_path"/>
+                <field name="root_modified_date"/>
+                <field name="folder_path"/>
+                <field name="modified_date"/>
+                <field name="count"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_get_folder_log_update">
+        <field name="name">Folder Log Update</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">folder.update.log</field>
+        <field name="view_mode">tree</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new folder update time
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_stock_folder_log_update" name="For log update" parent="stock.menu_stock_root"
+              action="action_get_folder_log_update" sequence="10"/>
+</odoo>

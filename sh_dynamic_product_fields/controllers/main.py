@@ -56,7 +56,7 @@ class WebsiteSaleCustom(WebsiteSale):
                 # finally make empty string if there is no field value or has false field value
                 if not field_value:
                     field_value = ""
-
+                barcode = request.env['product.template'].add_barcode_value()
                 if field_value:
                     post_msg += _('''
                     <span>
@@ -65,8 +65,10 @@ class WebsiteSaleCustom(WebsiteSale):
             ''') % {
                         'field_description': product_field.field_description,
                         'field_value': field_value,
+                        'barcode':barcode
                     }
 
+                print("\n\n\n\n\n....post_msg......",post_msg)
             product.sudo().sh_dynamic_product_fields_raw_html = post_msg
 
         return res

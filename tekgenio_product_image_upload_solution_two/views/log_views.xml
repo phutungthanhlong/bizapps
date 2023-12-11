@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="product_image_upload_log_view_tree" model="ir.ui.view">
+        <field name="name">product.image.upload.view.tree</field>
+        <field name="model">product.image.upload.log</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="root_path"/>
+                <field name="import_timestamp"/>
+                <field name="salesperson_id"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="product_image_upload_log_view_form" model="ir.ui.view">
+        <field name="name">product.image.upload.view.form</field>
+        <field name="model">product.image.upload.log</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="import_timestamp"/>
+                        <field name="salesperson_id"/>
+                        <field name="status"/>
+                        <field name="root_path"/>
+                    </group>
+                    <field name="product_image_upload_line_ids" widget="one2many">
+                        <tree editable="bottom" decoration-success="log_type == 'Success'"
+                              decoration-danger="log_type == 'Danger'">
+                            <field name="barcode"/>
+                            <field name="log_status"/>
+                            <field name="log_message"/>
+                            <field name="log_type" invisible="1"/>
+                        </tree>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_get_product_image_upload_log" model="ir.actions.act_window">
+        <field name="name">Log Menu</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">product.image.upload.log</field>
+        <field name="view_mode">tree,form</field>
+        <!--        <field name="domain">[('salesperson_id', '=', uid)]</field>-->
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smilinig_face">
+                Create your logs here
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_product_image_upload_log_details"
+              name="TekGenio Image Sync Logs"
+              parent="stock.menu_stock_root"
+              action="action_get_product_image_upload_log"
+              sequence="99"/>
+</odoo>

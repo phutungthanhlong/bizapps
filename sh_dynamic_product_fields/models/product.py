@@ -9,3 +9,8 @@ class ProductTemplate(models.Model):
 
     sh_dynamic_product_fields_raw_html = fields.Html(
         'Product Fields Data', translate=True)
+    
+    def add_barcode_value(self):
+        print("\n\n\n\n...SELF......",self)
+        
+        return self.barcode
