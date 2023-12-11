@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--PRODUCT TEMPLATE INHERIT-->
+    <template id="product" inherit_id="website_sale.product" customize_show="True" active="True" name="Dynamic Product Fields">
+        <xpath expr="//div[@id='product_details']//p[hasclass('text-muted')]" position="before">
+            <t t-if="request.website.sudo().sh_dynamic_product_fields_ids">
+                <hr />
+                <t t-raw="product.sh_dynamic_product_fields_raw_html" />
+            </t>
+        </xpath>
+    </template>
+</odoo>
