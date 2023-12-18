@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="product_pricelist_item_form_view" model="ir.ui.view">
+        <field name="name">product.pricelist.item.inherit</field>
+        <field name="model">product.pricelist.item</field>
+        <field name="inherit_id" ref="product.product_pricelist_item_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='pricelist_rule_method']" position="after">
+                <field name="python_code"
+                       attrs="{'invisible': [('compute_price', 'not in', ['dynamic_formula'])], 'required': [('compute_price', 'in', ['dynamic_formula'])]}"
+                       widget="ace"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
