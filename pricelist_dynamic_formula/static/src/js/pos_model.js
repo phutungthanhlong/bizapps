@@ -9,7 +9,6 @@ odoo.define('custom_point_of_sale.models', function (require) {
     var _t = core._t;
 
     patch(Product.prototype, "pos_product", {
-
         get_price(pricelist, quantity, price_extra) {
             var self = this;
             var date = moment();
@@ -53,7 +52,8 @@ odoo.define('custom_point_of_sale.models', function (require) {
                     price = price - (price * (rule.percent_price / 100));
                     return true;
                 } else {
-                    if (rule.compute_price === 'dynamic_formula') {
+                    if (rule.compute_price === 'dynamic_formula' && rule.list_product_price != undefined) {
+                        debugger;
                         price = JSON.parse(rule.list_product_price)[self.id] || price;
 
                     } else {

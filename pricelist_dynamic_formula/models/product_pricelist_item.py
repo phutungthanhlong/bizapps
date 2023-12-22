@@ -49,3 +49,11 @@ result = 0''')
         }
         price = self._satisfy_condition(local_dict)
         return price
+
+    def _compute_price(self, product, quantity, uom, date, currency=None):
+        price = super(ProductPricelistItem, self)._compute_price(product, quantity, uom, date, currency)
+        if self.compute_price == 'dynamic_formula':
+            price = self.compute_dynamic_price(order_id=False,
+                                               partner_id=False,
+                                               product_id=product.product_variant_id.id if product and product._name == 'product.template' else product.id)
+        return price
